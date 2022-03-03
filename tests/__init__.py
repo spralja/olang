@@ -25,20 +25,10 @@ class FeedTestCase(unittest.TestCase):
         feed = olang.feed.Feed('test')
         self.assertFalse(feed.is_empty())
 
-    def test_is_next_True(self):
+    def test_peek_at(self):
         feed = olang.feed.Feed('test')
-        string = 'tes'
-        self.assertTrue(feed.is_next(string))
-
-    def test_is_next_False(self):
-        feed = olang.feed.Feed('test')
-        string ='tst'
-        self.assertFalse(feed.is_next(string))
-
-    def test_is_next_False_shorter(self):
-        feed = olang.feed.Feed('test')
-        string = 'tests'
-        self.assertFalse(feed.is_next(string))
+        self.assertEqual(feed.peek(1), 'e')
+        
 
 class StringLitteralTokenTestCase(unittest.TestCase):
     def test_is_next_True(self):
@@ -86,3 +76,25 @@ class NumberLitteralTokenTestCase(unittest.TestCase):
         feed = olang.feed.Feed('123a')
         with self.assertRaises(olang.token.errors.TokenError):
             token = olang.token.StringLitteralToken(feed)
+
+
+class StandardDeclarationTokenTestCase(unittest.TestCase):
+    def test_is_next_let(self):
+        feed = olang.feed.Feed('let')
+        self.assertTrue(olang.token.StandardDeclarationToken.is_next(feed))
+
+    def test_is_next_let_space(self):
+        feed = olang.feed.Feed('let ')
+        self.assertTrue(olang.token.StandardDeclarationToken.is_next(feed))
+
+    def test_is_next_le(self):
+        feed = olang.feed.Feed('le')
+        self.assertFalse(olang.token.StandardDeclarationToken.is_next(feed))
+
+    def test_is_next_le1(self):
+        feed = olang.feed.Feed('le1')
+        self.assertFalse(olang.token.StandardDeclarationToken.is_next(feed))
+    
+    def test_constructor(self):
+        feed = olang.feed.Feed('let')
+        self.assertEqual(olang.token.StandardDeclarationToken(feed).value, 'let')
