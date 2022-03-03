@@ -9,3 +9,6 @@ class Feed:
     
     def peek(self):
         return self.list[0]
+
+    def is_empty(self):
+        return len(self.list) == 0
