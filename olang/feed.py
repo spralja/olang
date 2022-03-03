@@ -15,3 +15,6 @@ class Feed:
 
     def __len__(self):
         return len(self.list)
+
+    def __str__(self):
+        return str(self.list)

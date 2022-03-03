@@ -1,6 +1,14 @@
 import argparse
-from .interpreter import run_file, run_console
+from .scanner import Scanner
+from .feed import Feed
 
+scanner = Scanner()
+
+def run_prompt():
+    while True:
+        feed = Feed(input("¥: "))
+        tokens = scanner.scan(feed)
+        print([str(token) for token in tokens])
 
 def main():
     parser = argparse.ArgumentParser(prog='olang')
@@ -10,7 +18,7 @@ def main():
     if args.pop('file'):
         run_file('file')
     else:
-        run_console()
+        run_prompt()
 
 
 if __name__ == '__main__':

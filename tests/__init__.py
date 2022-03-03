@@ -98,3 +98,13 @@ class StandardDeclarationTokenTestCase(unittest.TestCase):
     def test_constructor(self):
         feed = olang.feed.Feed('let')
         self.assertEqual(olang.token.StandardDeclarationToken(feed).value, 'let')
+
+
+class StandardIdentifierTokenTestCase(unittest.TestCase):
+    def test_is_next_foo(self):
+        feed = olang.feed.Feed('foo')
+        self.assertTrue(olang.token.StandardIdentifierToken.is_next(feed))
+
+    def test_constructor(self):
+        feed = olang.feed.Feed('foo123.')
+        self.assertEqual(olang.token.StandardIdentifierToken(feed).value, 'foo123')
