@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from . import errors
 
 
 class TokenBase(metaclass=ABCMeta):
@@ -23,25 +24,22 @@ class StringLitteralToken(LitteralTokenBase):
         self.value = ''
 
         if feed.is_empty():
-            raise Exception('String litteral not ended')
+            raise errors.TokenError('String litteral not ended')
 
         while feed.peek() != '"':
             if feed.peek() == '\\':
                 self.value += feed.pop()
                 if feed.is_empty():
-                    raise Exception('String litteral not ended')
+                    raise errors.TokenError('String litteral not ended')
 
             self.value += feed.pop()
 
             if feed.is_empty():
-                raise Exception('String litteral not ended')
+                raise errors.TokenError('String litteral not ended')
 
         
     @staticmethod
     def is_next(feed):
-        if feed.is_empty():
-            raise Exception('Feed is empty')
-
         return feed.peek() == '"'
 
 
@@ -53,7 +51,7 @@ class IntegerLitteralToken(LitteralTokenBase):
             self.value += feed.pop()
 
         if not feed.is_empty() and not feed.peek().isalpha():
-            raise Exception('Number literal ended with alpha')
+            raise errors.TokenError('Number literal not ended before alpha')
 
         self.value = int(self.value)
 
