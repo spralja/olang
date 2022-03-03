@@ -25,6 +25,20 @@ class FeedTestCase(unittest.TestCase):
         feed = olang.feed.Feed('test')
         self.assertFalse(feed.is_empty())
 
+    def test_is_next_True(self):
+        feed = olang.feed.Feed('test')
+        string = 'tes'
+        self.assertTrue(feed.is_next(string))
+
+    def test_is_next_False(self):
+        feed = olang.feed.Feed('test')
+        string ='tst'
+        self.assertFalse(feed.is_next(string))
+
+    def test_is_next_False_shorter(self):
+        feed = olang.feed.Feed('test')
+        string = 'tests'
+        self.assertFalse(feed.is_next(string))
 
 class StringLitteralTokenTestCase(unittest.TestCase):
     def test_is_next_True(self):
