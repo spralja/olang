@@ -1,28 +1,32 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
 from . import errors
+import string
 
 IGNORED_CHARACTERS = {' ', '\n', '\t', '\r'}
+GLOBALS = {}
 
 
 class TokenBase(metaclass=ABCMeta):
+    head = set()
+    body = set()
+
+    @abstractmethod
+    def __init__(self, feed):
+        self.value = ''
+        while not feed.is_empty() and feed.peek() in self.body:
+            self.value += feed.pop()
 
     @classmethod
-    @abstractmethod
     def is_next(cls, feed):
-        pass
+        return feed.peek() in cls.head
 
     def __str__(self):
-        return f'{self.__class__.__name__}: {self.value}'
+        return f'{self.__class__.__name__}: '
 
 
-class LitteralTokenBase(TokenBase):
-    
-    def __init__(self, feed):
-        self.value = None
-
-
-class StringLitteralToken(LitteralTokenBase):
+class StringLitteralToken(TokenBase):
+    head = {'"'}
 
     def __init__(self, feed):
         feed.pop()
@@ -43,99 +47,77 @@ class StringLitteralToken(LitteralTokenBase):
                 raise errors.TokenError('String litteral not ended')
         
         feed.pop()
-        
-    @classmethod
-    def is_next(cls, feed):
-        return feed.peek() == '"'
+
+    def __str__(self):
+        return super().__str__() + f'"{self.value}"'
 
 
-class IntegerLitteralToken(LitteralTokenBase):
+class CharacterLiteralToken(TokenBase):
+    head = {'\''}
     def __init__(self, feed):
-        self.value = ''
+        feed.pop()
+        
+        if feed.is_empty():
+            raise errors.TokenError('Character literal not ended')
 
-        while  not feed.is_empty() and feed.peek().isnumeric():
+        self.value = feed.pop()
+
+        if self.value == '\'':
+            raise errors.TokenError('Character litteral empty')
+
+        if self.value == '\\':
             self.value += feed.pop()
 
-        if not feed.is_empty() and not feed.peek().isalpha():
-            raise errors.TokenError('Number literal not ended before alpha')
+        if feed.is_empty():
+            raise errors.TokenError('EOF, but character literal not ended')
+
+        feed.pop()
+
+    def __str__(self):
+        return super().__str__() +  f'\'{self.value}\''
+
+
+class IntegerLitteralToken(TokenBase):
+    head = set(string.digits)
+    body = set(string.digits)
+
+    def __init__(self, feed):
+        super().__init__(feed)
+        if self.value[0] == '0' and len(self.value) > 1:
+            raise errors.TokenError('Leading 0s not premitted')
 
         self.value = int(self.value)
 
-    @classmethod
-    def is_next(cls, feed):
-        return feed.peek().isnumeric()
+    def __str__(self):
+        return super().__str__() + f'{self.value}'
 
 
-class KeywordTokenBase(TokenBase):
-    keyword = None
-
-    @abstractmethod
-    def __init__(self, feed):
-        self.value = None
-
-    @classmethod
-    def is_next(cls, feed):
-        name = cls.keyword
-        if len(feed) < len(name):
-            return False
-
-        current = 0
-        while current < len(name):
-            if name[current] != feed.peek(current):
-                return False
-
-            current += 1
-
-        if len(feed) < len(name) + 1:
-            return True
-
-        return feed.peek(current) in IGNORED_CHARACTERS
-
-
-class StandardDeclarationToken(KeywordTokenBase):
-    keyword = 'let'
-
-    def __init__(self, feed):
-        self.value = feed.pop() + feed.pop() + feed.pop()
-
-
-class PrintToken(KeywordTokenBase):
-    keyword = 'print'
-
-    def __init__(self, feed):
-        self.value = feed.pop() + feed.pop() + feed.pop() + feed.pop() + feed.pop()
-
-    
-
-class AssignmentOperatorToken(KeywordTokenBase):
-    keyword = '='
-    def __init__(self, feed):
-        self.value = feed.pop()
-
-    @classmethod
-    def is_next(cls, feed):
-        return feed.peek() == cls.keyword
-
-
-class IdentifierTokenBase(TokenBase):
-    def __init__(self, feed):
-        self.value = None
-
-
-class StandardIdentifierToken(IdentifierTokenBase):
+class IdentifierToken(TokenBase):
+    head = set(string.ascii_letters) | {'_'}
+    body = head | set(string.digits)
 
     def __init__(self, feed):
         self.value = ''
-
-        while not feed.is_empty() and (feed.peek().isalpha() or feed.peek().isnumeric()):
+        while feed and feed.peek() in self.body:
             self.value += feed.pop()
 
-    @classmethod
-    def is_next(cls, feed):
-        return feed.peek().isalpha()
+    def __str__(self):
+        return f'{self.__class__.__name__}: {self.value}'
 
-TYPES_OF_TOKENS = StringLitteralToken, IntegerLitteralToken, StandardDeclarationToken, PrintToken, AssignmentOperatorToken, StandardIdentifierToken
-#ordre matters
+
+class PunctuationToken(TokenBase):
+    head = {'=', '>', '<', '!', '+', '-', '*', '/', ';', '('}
+
+    def __init__(self, feed):
+        self.value = ''
+        while not feed.is_empty() and feed.peek() in self.head:
+            self.value += feed.pop()
+
+    def __str__(self):
+        return super().__str__() + f'{self.value}'
+
+
+TYPES_OF_TOKENS = StringLitteralToken, CharacterLiteralToken, IntegerLitteralToken, IdentifierToken, PunctuationToken
 
 def tokenize(feed):
     for TYPE_OF_TOKEN in TYPES_OF_TOKENS:

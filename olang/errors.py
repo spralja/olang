@@ -8,7 +8,7 @@ class BaseError(Exception, metaclass=ABCMeta):
         self.message = message
 
     def __str__(self):
-        return f'{str(type(self))} : {self.message!r}'
+        return f'{self.message!r}'
 
 
 class SyntaxError(BaseError):
